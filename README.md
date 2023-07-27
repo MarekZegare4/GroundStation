@@ -31,3 +31,6 @@ Later I'll add Cad files of the whole assembly with case
 - Saving tracker's position to a file for later use
 - TCP mavlink data stream via Raspberry Pi's access point
 
+# To Do
+
+ - [ ] Finish To Do

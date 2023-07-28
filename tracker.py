@@ -7,6 +7,7 @@ import os.path
 from getch import getche, getch
 import RPi.GPIO as GPIO
 
+#GPIO setup
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
@@ -32,11 +33,9 @@ class cart_coord():
         self.y = y
         self.z = z
 
-tracker_lat = 0.0
-tracker_lon = 0.0
-tracker_alt = 0.0
-tracker_pos = geo_coord(tracker_lat, tracker_lon, tracker_alt)
+tracker_pos = geo_coord(0.0, 0.0, 0.0)
 precision = 10000000.0
+alt_precision = 10000.0
 
 # screen resolution 20x53 char
 def startup():
@@ -135,7 +134,7 @@ def wait_connection(m):
     print_center('Connected')
 
 def connect_serial():
-    master = mavutil.mavlink_connection('tcp:0.0.0.0:5601') # port used by mavp2p
+    master = mavutil.mavlink_connection('tcp:0.0.0.0:5601') # Listen to a port connected to mavp2p
     wait_connection(master)
     return master
 
@@ -160,7 +159,7 @@ def get_gps_data():
         alt_buf += gps_data.alt
     tracker_pos.lat = float(lat_buf / (10 * precision))  # convert to degrees
     tracker_pos.lon = float(lon_buf / (10 * precision)) 
-    tracker_pos.alt = float(alt_buf / (10 * 10000))       # convert from milimeters
+    tracker_pos.alt = float(alt_buf / (10 * alt_precision))       # convert from milimeters
 
 """
 def get_gps_data():
@@ -257,30 +256,40 @@ while True:
     except:
         print_center("Connection lost")
         break
-    drone_pos = geo_coord(gps_data.lat / precision, gps_data.lon / precision, gps_data.alt / 10000)
+    drone_pos = geo_coord(gps_data.lat / precision, gps_data.lon / precision, gps_data.alt / alt_precision)
     track_data = Geodesic.WGS84.Inverse(tracker_pos.lat, tracker_pos.lon, drone_pos.lat, drone_pos.lon)
     drone_cart = cart_coord(*cart(drone_pos))
-    tracker_cart = cart_coord(*cart(tracker_pos))  
+    tracker_cart = cart_coord(*cart(tracker_pos))
+
     if track_data["azi1"] < 0:
         azimuth = track_data["azi1"] + 360
     else:
         azimuth = track_data["azi1"]
+
     distance = sqrt((tracker_cart.x - drone_cart.x) ** 2 + (tracker_cart.y - drone_cart.y) ** 2 + (tracker_cart.z - drone_cart.z) ** 2)
     alt_acos = track_data["s12"]/distance
 
     if track_data["s12"]/distance >= 1:
         alt_acos = 1
+
     inclination = degrees(acos(alt_acos))
     diff_az = azimuth - buf_az
+    if abs(diff_az) > 180:
+        if diff_az < 0:
+            diff_az += 360
+        else:
+            diff_az -= 360
     diff_alt = inclination - buf_dist
     buf_az = azimuth
     buf_alt = inclination
 
     deg_in_steps = int(abs(diff_az)/(360/1600)) 
+
     if diff_az >= 0:
        GPIO.output(dir, False)
     else:
        GPIO.output(dir, True)
+
     for i in range(deg_in_steps):
        motor_step()
        time.sleep(0.001)

@@ -6,6 +6,8 @@ import time
 import os.path
 from getch import getche, getch
 import RPi.GPIO as GPIO
+import pitft_display as tft
+import coord as coord
 
 #GPIO setup
 GPIO.setmode(GPIO.BCM)
@@ -21,117 +23,14 @@ GPIO.setup(dir, GPIO.OUT)
 
 GPIO.output(enable, False)
 
-class geo_coord():
-    def __init__(self, lat, lon, alt):
-        self.lat = lat
-        self.lon = lon
-        self.alt = alt
-
-class cart_coord():
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
-
-tracker_pos = geo_coord(0.0, 0.0, 0.0)
+tracker_pos = coord.geo_coord(0.0, 0.0, 0.0)
 precision = 10000000.0
 alt_precision = 10000.0
 
-# screen resolution 20x53 char
-def startup():
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("          __  ___             __ _        __         ")
-    print("         /  |/  /___ _ _  __ / /(_)___   / /__       ")
-    print("        / /|_/ // _ `/| |/ // // // _ \ /  '_/       ")
-    print("       /_/  /_/ \_,_/ |___//_//_//_//_//_/\_\        ")
-    print("        ______                 __                    ")
-    print("       /_  __/____ ___ _ ____ / /__ ___  ____        ")
-    print("        / /  / __// _ `// __//  '_// -_)/ __/        ")
-    print("       /_/  /_/   \_,_/ \__//_/\_\ \__//_/           ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    
-    time.sleep(2)
-
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("          __  ___             __ _        __         ")
-    print("         /  |/  /___ _ _  __ / /(_)___   / /__       ")
-    print("        / /|_/ // _ `/| |/ // // // _ \ /  '_/       ")
-    print("       /_/  /_/ \_,_/ |___//_//_//_//_//_/\_\        ")
-    print("        ______                 __                    ")
-    print("       /_  __/____ ___ _ ____ / /__ ___  ____        ")
-    print("        / /  / __// _ `// __//  '_// -_)/ __/        ")
-    print("       /_/  /_/   \_,_/ \__//_/\_\ \__//_/           ")
-    print("                                                     ")
-    print("                                                     ")
-    print('{:^53}'.format('Press any button to continue...'))
-    print("                                                     ")
-    print("                                                     ")
-    print("   A              B               C              D   ")
-    a = getch()
-
-def print_center(text):
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print('{:^53}'.format(text))
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("   A              B               C              D   ")
-
-def print_center_yesno(text):
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print('{:^53}'.format(text))
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("                                                     ")
-    print("  Yes            No                                  ")
-
 def wait_connection(m):
-    print_center('Waiting for connection...')
+    tft.print_center('Waiting for connection...')
     msg = m.recv_match(type='SYS_STATUS', blocking=True)
-    print_center('Connected')
+    tft.print_center('Connected')
 
 def connect_serial():
     master = mavutil.mavlink_connection('tcp:0.0.0.0:5601') # Listen to a port connected to mavp2p
@@ -139,7 +38,7 @@ def connect_serial():
     return master
 
 def wait_for_fix():
-    print_center('Waiting for GPS fix')
+    tft.print_center('Waiting for GPS fix')
     fixed = False
     while not fixed:
         gps_data = connection.recv_match(type='GPS_RAW_INT', blocking=True)
@@ -161,33 +60,8 @@ def get_gps_data():
     tracker_pos.lon = float(lon_buf / (10 * precision)) 
     tracker_pos.alt = float(alt_buf / (10 * alt_precision))       # convert from milimeters
 
-"""
-def get_gps_data():
-    global tracker_pos
-    lat_buf = 0
-    lon_buf = 0
-    lat = 0
-    lon = 0
-    alt = 0
-    location_stabilized = False
-    while not location_stabilized:
-        gps_data = connection.recv_match(type='GPS_RAW_INT', blocking=True)
-        lat = gps_data.lat
-        lon = gps_data.lon
-        alt = gps_data.alt
-        lat_diff = lat - lat_buf
-        lon_diff = lon - lon_buf
-        lat_buf = lat
-        lon_buf = lon
-        if abs(lat_diff) <= 1000 and abs(lon_diff) <= 1000: # meters of difference between location samples
-            location_stabilized = True
-            tracker_pos.lat = lat / precision
-            tracker_pos.lon = lon / precision
-            tracker_pos.alt = alt / 10000
-"""
-
 def save_tracker_pos(): 
-    print_center("Press any key to save tracker's location")
+    tft.print_center("Press any key to save tracker's location")
     a = getch()
     get_gps_data()
     LastPos = (str(tracker_pos.lat)+'\n'+str(tracker_pos.lon)+'\n'+str(tracker_pos.alt)+'\n')
@@ -200,7 +74,7 @@ def set_tracker_pos():
     path = './LastPos.txt'
     is_LastPos = os.path.isfile(path)
     if is_LastPos == True:
-        print_center_yesno("Saved postion found. Do you want to use it?")
+        tft.print_center_yesno("Saved postion found. Do you want to use it?")
         selection = getch()
         if selection == 'a':
             file = open("LastPos.txt", "r")
@@ -208,7 +82,7 @@ def set_tracker_pos():
             tracker_pos.lon = float(file.readline())
             tracker_pos.alt = float(file.readline())
             file.close()
-            print_center("Position set")
+            tft.print_center("Position set")
             time.sleep(2)
         else:
             wait_for_fix()
@@ -216,9 +90,6 @@ def set_tracker_pos():
     else:
         wait_for_fix()
         save_tracker_pos()
-
-def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
 
 # Conversion from WGS84 to cartesian coordinates
 def cart(geo_coord): 
@@ -238,13 +109,13 @@ def motor_step():
     time.sleep(0.001)
     GPIO.output(step, False)
 
-clear_screen()
-startup()
-clear_screen()
+tft.clear_screen()
+tft.startup()
+tft.clear_screen()
 connection = connect_serial()
-clear_screen()
+tft.clear_screen()
 set_tracker_pos()
-clear_screen()
+tft.clear_screen()
 
 buf_az = 0.0
 buf_dist = 0.0
@@ -254,12 +125,12 @@ while True:
     try:
         gps_data = connection.recv_match(type='GPS_RAW_INT', blocking=True)
     except:
-        print_center("Connection lost")
+        tft.print_center("Connection lost")
         break
-    drone_pos = geo_coord(gps_data.lat / precision, gps_data.lon / precision, gps_data.alt / alt_precision)
+    drone_pos = coord.geo_coord(gps_data.lat / precision, gps_data.lon / precision, gps_data.alt / alt_precision)
     track_data = Geodesic.WGS84.Inverse(tracker_pos.lat, tracker_pos.lon, drone_pos.lat, drone_pos.lon)
-    drone_cart = cart_coord(*cart(drone_pos))
-    tracker_cart = cart_coord(*cart(tracker_pos))
+    drone_cart = coord.cart_coord(*cart(drone_pos))
+    tracker_cart = coord.cart_coord(*cart(tracker_pos))
 
     if track_data["azi1"] < 0:
         azimuth = track_data["azi1"] + 360
@@ -296,7 +167,7 @@ while True:
 
     if distance > 1000:
         #print(f'{str(round(diff_az, 2)):5} {str(round(diff_alt, 2)):5}')
-        print_center(f'Az.(deg): {str(round(azimuth, 2)):7} Dist.(km): {str(round(distance / 1000, 2)):7} Incl.(deg): {str(round(inclination, 2)):7}')
+        tft.print_center(f'Az.(deg): {str(round(azimuth, 2)):7} Dist.(km): {str(round(distance / 1000, 2)):7} Incl.(deg): {str(round(inclination, 2)):7}')
     else:
         #print(f'{str(round(diff_az, 2)):5} {str(round(diff_alt, 2)):5}')
-        print_center(f'Az.(deg): {str(round(azimuth, 2)):7} Dist.(m): {str(round(distance, 2)):7} Incl.(deg): {str(round(inclination, 2)):7}')
+        tft.print_center(f'Az.(deg): {str(round(azimuth, 2)):7} Dist.(m): {str(round(distance, 2)):7} Incl.(deg): {str(round(inclination, 2)):7}')

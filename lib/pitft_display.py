@@ -1,5 +1,6 @@
 import time
-import os.path
+import os
+from getch import getche, getch
 
 # screen resolution 20x53 char
 def startup():
@@ -46,7 +47,8 @@ def startup():
     print("                                                     ")
     print("                                                     ")
     print("   A              B               C              D   ")
-   
+    getch()
+
 def print_center(text):
     print("                                                     ")
     print("                                                     ")

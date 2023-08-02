@@ -1,12 +1,10 @@
-#from geographiclib.geodesic import Geodesic
-from math import radians, cos, sqrt, sin, acos, degrees
 from pymavlink import mavutil
 import keyboard
 import time
 import os.path
 from getch import getche, getch
 import RPi.GPIO as GPIO
-import lib.pitft_display as disp
+import lib.pitftDisplay as disp
 import lib.geoTransform as geo
 
 #GPIO setup
@@ -56,9 +54,9 @@ def get_gps_data():
         lat_buf += gps_data.lat
         lon_buf += gps_data.lon
         alt_buf += gps_data.alt
-    tracker_pos.lat = float(lat_buf / (10 * precision))  # convert to degrees
+    tracker_pos.lat = float(lat_buf / (10 * precision))
     tracker_pos.lon = float(lon_buf / (10 * precision)) 
-    tracker_pos.alt = float(alt_buf / (10 * alt_precision))       # convert from milimeters
+    tracker_pos.alt = float(alt_buf / (10 * alt_precision))
 
 def save_tracker_pos(): 
     disp.print_center("Press any key to save tracker's location")
@@ -105,6 +103,7 @@ set_tracker_pos()
 disp.clear_screen()
 
 buf_az = 0.0
+buf_incl = 0.0
 
 while True:
     try:
@@ -120,6 +119,7 @@ while True:
     inclination = track_data[2]
     
     diff_az = azimuth - buf_az
+    diff_incl = inclination - buf_incl
     if abs(diff_az) > 180:
         if diff_az < 0:
             diff_az += 360

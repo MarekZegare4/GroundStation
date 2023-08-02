@@ -34,12 +34,10 @@ def DistAziElev(c1, c2):
     azimuth = degrees(atan2(sin(dlon)*cos(radians(c2.lat)), cos(radians(c1.lat))*sin(radians(c2.lat))-sin(radians(c1.lat))*cos(radians(c2.lat))*cos(dlon)))
     if azimuth < 0:
         azimuth += 360
-
     # https://stackoverflow.com/questions/29858543/elevation-angle-between-positions
     phi = d/R
     d1 = (R + c1.alt)*cos(phi)
     d3 = (R + c1.alt)*sin(phi)
     d2 = c2.alt - c1.alt*cos(phi) + R*(1 - cos(phi))
     elevation = degrees(atan2(c2.alt - c1.alt*cos(phi) + R*(1 - cos(phi)), (R + c1.alt)*sin(phi)))
-
     return d, azimuth, elevation

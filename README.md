@@ -10,9 +10,9 @@ Focus of this project is to develop all in one antenna tracking device capable o
 
 # To do
 
-1.  Integrate all necessary components into a PCB
+1. Integrate all necessary components into a PCB
 2. Finish software development
-	 - User interface
-	 -  Changing RX settings with UI
+	 - UI for built in LCD
+  	 - Web dashboard and config
 	 - On-board GPS module integration
-4. Write documentation
+3. Documentation
